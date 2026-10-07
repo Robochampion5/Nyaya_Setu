@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Scale, Sparkles, AlertTriangle, CheckCircle2, ShieldAlert, Clock, RefreshCw, Send } from 'lucide-react';
+import { Scale, Sparkles, AlertTriangle, CheckCircle2, ShieldAlert, Clock, RefreshCw, Send, FileText, Printer, X, Compass, Activity } from 'lucide-react';
 import ScoreGauge from './ScoreGauge';
 import ShapWaterfall from './ShapWaterfall';
 import { scoreSingleCase } from '../services/api';
@@ -11,6 +11,7 @@ export default function SingleCaseScrutiny({ referenceData }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // Auto-run scoring on initial load or preset change
   useEffect(() => {
@@ -308,6 +309,39 @@ export default function SingleCaseScrutiny({ referenceData }) {
                 </div>
               </div>
 
+              {/* Dispute Lifecycle & Procedural Timeline Tracking */}
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center space-x-1.5 font-semibold text-slate-200">
+                    <Activity className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Dispute Procedural Lifecycle & Tracking</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-amber-400">Total Age: {formData.case_age_days} days</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+                  <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px]">
+                    <div className="text-slate-400">1. Case Filing</div>
+                    <div className="font-medium text-emerald-400 mt-0.5">NJDG Registered</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px]">
+                    <div className="text-slate-400">2. First Listing</div>
+                    <div className="font-medium text-slate-200 mt-0.5">+{formData.first_listing_delay}d delay</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/40 text-[11px]">
+                    <div className="text-amber-300 font-bold">3. Current Stage</div>
+                    <div className="font-medium text-amber-200 capitalize mt-0.5">{formData.purpose_name_val || 'Hearing'}</div>
+                  </div>
+                  <div className={`p-2 rounded-lg border text-[11px] ${
+                    result.recommendation === 'Trial'
+                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  }`}>
+                    <div className="text-slate-400">4. Target Route</div>
+                    <div className="font-bold mt-0.5">{result.recommendation}</div>
+                  </div>
+                </div>
+              </div>
+
               {/* Gauge & Main Verdict Card */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                 <div className="md:col-span-5">
@@ -319,9 +353,19 @@ export default function SingleCaseScrutiny({ referenceData }) {
                 </div>
 
                 <div className="md:col-span-7 space-y-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Scrutiny Committee Action
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Scrutiny Committee Action
+                    </h4>
+                    <button
+                      onClick={() => setShowOrderModal(true)}
+                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold transition"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Draft DLSA Order Sheet</span>
+                    </button>
+                  </div>
+                  
                   <div className="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2">
                     <div className="text-sm font-serif font-bold text-slate-100">
                       {result.recommendation === 'Lok Adalat' && 'Forward to National Lok Adalat Bench'}
@@ -357,7 +401,87 @@ export default function SingleCaseScrutiny({ referenceData }) {
         </div>
 
       </div>
+
+      {/* DLSA Section 89 Referral Order Sheet Modal */}
+      {showOrderModal && result && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2 text-amber-400 font-serif font-bold">
+                <Scale className="w-5 h-5" />
+                <span>DLSA Statutory Referral Order Sheet (Sec 89 CPC)</span>
+              </div>
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Printable Order Sheet Style Container */}
+            <div className="bg-white text-slate-900 p-6 rounded-xl space-y-4 font-serif text-xs border border-slate-300 shadow-inner">
+              <div className="text-center space-y-1 border-b pb-3 border-slate-300">
+                <div className="font-bold text-sm uppercase tracking-wider">In the Court of the Principal District Judge / DLSA</div>
+                <div className="text-[11px] text-slate-600">Case Scrutiny & ADR Screening Committee</div>
+                <div className="text-[11px] font-mono font-bold text-slate-800">CNR: {result.case_id}</div>
+              </div>
+
+              <div className="space-y-1">
+                <div><strong>Matter:</strong> <span className="capitalize">{formData.type_name_val || 'Civil Proceeding'}</span></div>
+                <div><strong>Pendency Duration:</strong> {formData.case_age_days} Days (Current Stage: {formData.purpose_name_val || 'Appearance'})</div>
+                <div><strong>Statutory Classification:</strong> {result.statutory_status} (Mediation Act 2023 / Sec 89 CPC)</div>
+                <div><strong>Nyaya Setu Suitability Rating:</strong> {result.suitability_percentage}% ({result.recommendation})</div>
+              </div>
+
+              <div className="p-3 bg-slate-100 rounded border border-slate-200 space-y-1">
+                <div className="font-bold text-[11px]">Primary Judicial & Empirical Findings:</div>
+                <ul className="list-disc list-inside space-y-0.5 text-slate-700">
+                  {result.top_reasons.slice(0, 3).map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="font-bold underline">ORDER OF THE COMMITTEE:</div>
+                <p className="leading-relaxed text-slate-800">
+                  {result.recommendation === 'Lok Adalat' && 'Having considered the nature of claim and amicable settlement precedent under Section 89 CPC, this matter is hereby referred to the upcoming NATIONAL LOK ADALAT BENCH. Registry is directed to issue notice to petitioner and defendant advocates for pre-conciliation sittings.'}
+                  {result.recommendation === 'Mediation' && 'The dispute exhibits commercial/relational elements amenable to consensual resolution. Matter referred to the DISTRICT MEDIATION CENTRE for appointment of a trained mediator under the Mediation Act 2023. Parties to appear on the scheduled date.'}
+                  {result.recommendation === 'Trial' && 'Matter is not suited for summary conciliation. It is directed that the suit be retained on regular court board for trial and framing of issues.'}
+                </p>
+              </div>
+
+              <div className="pt-6 flex justify-between items-end text-slate-700 text-[11px]">
+                <div>Date: {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                <div className="text-right">
+                  <div className="border-t border-slate-500 w-44 pt-1 font-bold">Secretary, DLSA / Judicial Officer</div>
+                  <div className="text-[10px] text-slate-500">Case Scrutiny Committee</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print / Save Order PDF</span>
+              </button>
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
 
