@@ -10,11 +10,27 @@
 
 ---
 
+## ⚠️ Evaluation Integrity Notice (Read Before Presenting)
+
+The model artifact committed to `artifacts/` is a **legacy build** and its scores must **not** be quoted as real-world performance. Three issues inflate the numbers:
+
+| Issue | Root Cause | Fix (implemented in `train.py` v2.0.0) |
+|---|---|---|
+| **Geography leakage** | `state_code`, `dist_code`, `court_no` used as features (~90% of model importance sits on `state_code`) | Excluded by default; pass `--include-geo` only for the ablation demo |
+| **Early-stopping leakage** | `eval_set` during training pointed at the test split, so the model's stopping point was chosen using the data it was then scored on | 3-way 70/15/15 split: validation drives early stopping, test is scored once |
+| **Frequency map leakage** | Categorical frequency maps computed on the full dataset before any train/test split | Maps are built from the training split only, then applied to validation and test |
+
+**How to present honestly:** *"The shipped artifact scored near-perfectly on historical labels, but a post-hoc audit found ~90% of model importance on `state_code` — the label tracks the data-recording convention of each state, not the merit of the dispute. We have identified and fixed all three leakage sources in `train.py` v2.0.0; re-running on the dataset produces an audited report with leave-state-out cross-validation."*
+
+> **Note on language models:** This codebase uses **tabular features only** (XGBoost / LightGBM). No text or language model (e.g. InLegalBERT) is integrated. Reading case text and judicial orders is explicitly planned as future work. Do not claim InLegalBERT is built — any technically aware judge can verify this by inspecting the repository in seconds.
+
+---
+
 ## System Architecture
 
 ```
 Nyaya-Setu/
-├── nyaya_setu_clean.csv         # DDL Judicial Data Portal dataset (~3.98M district filings)
+├── (nyaya_setu_clean.csv)       # NOT in the repo (size). Place at repo root or pass --data-path / NYAYA_DATA_PATH
 ├── cases_state_key.csv          # State code-name mapping table
 ├── cases_district_key.csv       # District code-name mapping table
 ├── cases_court_key.csv          # Court bench code-name mapping table
@@ -46,21 +62,20 @@ Nyaya-Setu/
 │   ├── test_inference.py        # Inference pipeline and SHAP translation tests
 │   ├── test_api.py              # FastAPI endpoint contracts and validation tests
 │   └── test_train_smoke.py      # End-to-end training pipeline smoke test
-└── Nyaya_Setu/
-    └── frontend/                # GovTech DLSA Case Scrutiny UI (React + Vite + Tailwind)
-        ├── src/
-        │   ├── components/      # Single case scrutiny, Score gauge, SHAP waterfall, Cause list
-        │   ├── services/api.js  # FastAPI client with error handling
-        │   └── data/presets.js  # Real District Court filing presets
-        ├── package.json
-        └── vite.config.js
+└── frontend/                    # GovTech DLSA Case Scrutiny UI (React + Vite + Tailwind)
+    ├── src/
+    │   ├── components/          # Single case scrutiny, Score gauge, SHAP waterfall, Cause list
+    │   ├── services/api.js      # FastAPI client with error handling
+    │   └── data/presets.js      # Real District Court filing presets
+    ├── package.json
+    └── vite.config.js
 ```
 
 ---
 
 ## 1. Model Training Pipeline (`train.py`)
 
-The training script `train.py` is **self-contained and decoupled** from the API service. By default, it trains on a **10 Lakh (1,000,000) stratified sample** of district court filings with an 80/20 train/test split.
+The training script `train.py` is **self-contained and decoupled** from the API service. By default, it trains on a **10 Lakh (1,000,000) stratified sample** of district court filings with a 70/15/15 train/validation/test split.
 
 ### Running Locally on CPU (Smoke Test or 10L Training)
 ```bash
@@ -68,7 +83,7 @@ The training script `train.py` is **self-contained and decoupled** from the API 
 source .venv/bin/activate
 
 # 2. Run training & benchmarking on CPU with 10 Lakh sample
-python train.py --sample-size 1000000 --device cpu --model-type benchmark --output-dir artifacts/
+python train.py --data-path path/to/nyaya_setu_clean.csv --sample-size 1000000 --device cpu --model-type benchmark --output-dir artifacts/
 ```
 
 ### Running on Remote GPU Server (CUDA / GPU Acceleration)
@@ -84,7 +99,7 @@ To train on a dedicated GPU server:
    ```
 3. Run training with GPU acceleration:
    ```bash
-   python train.py --sample-size 1000000 --device cuda --model-type benchmark --output-dir artifacts/
+   python train.py --data-path path/to/nyaya_setu_clean.csv --sample-size 1000000 --device cuda --model-type benchmark --output-dir artifacts/
    ```
 4. The script will output versioned model artifacts to `artifacts/`:
    - `artifacts/nyaya_setu_model.joblib`
@@ -93,15 +108,20 @@ To train on a dedicated GPU server:
    - `artifacts/shap_background.joblib`
    - `artifacts/evaluation_report.md`
 
-### Benchmark Evaluation Results (10 Lakh Samples)
-| Metric | XGBoost (Selected) | LightGBM |
-|---|---|---|
-| **ROC-AUC** | **1.0000** | 1.0000 |
-| **Accuracy** | **99.99%** | 99.98% |
-| **Precision (ADR)** | **99.99%** | 99.98% |
-| **Recall (ADR)** | **100.00%** | 100.00% |
-| **F1-Score (ADR)** | **99.99%** | 99.99% |
-| **Train Duration** | **1.47s** | 1.20s |
+### Evaluation Methodology (v2.0.0 — corrected pipeline)
+- **Three-way stratified split** (70/15/15): the validation split drives early stopping, model selection, and threshold tuning; the test split is scored **once** at the very end.
+- **Frequency encodings are fit on the train split only**, then applied to validation and test without re-computation.
+- **Only statutory-eligible cases are modelled** — the rule engine removes ineligible cases before the model ever runs, avoiding train/serve skew.
+- **No geography IDs as features** (`state_code`, `dist_code`, `court_no`) and no `statutory_eligible` gate feature by default; pass `--include-geo` only to demonstrate the geography shortcut in the leakage audit.
+- **Leakage audit** (written to `artifacts/evaluation_report.md`): single-feature AUCs (each feature in isolation), geography-only baseline, ablation with geography allowed, and **leave-state-out cross-validation** (train on N−1 states, score the held-out state). Near-perfect scores trigger an explicit warning rather than a headline.
+- Reported against the **majority-class baseline** (ADR label is ~86.5% positive, so raw accuracy alone is uninformative), alongside PR-AUC and Brier score.
+
+> **⚠️ Status of the shipped `artifacts/` directory:** the committed model is a **legacy build (v1.0.0)** produced by the earlier pipeline. It scored ROC-AUC 1.0000 / 99.99% accuracy, but a post-hoc audit shows ~90% of its XGBoost importance sits on `state_code` alone — the probability is 0.998 for every state except Madhya Pradesh (0.06). **These figures reflect how the label was recorded per state, not predictive legal skill.** Regenerate with the command above before quoting any metric in a presentation or publication.
+
+### Limitations & Responsible Use
+- The label (`is_adr_target`) is a **historical outcome**; the model learns historical court disposal patterns, not what is legally or ethically the right outcome for a dispute.
+- **Tabular model only** (XGBoost / LightGBM). **No text or language model** (e.g. InLegalBERT) is used in this codebase. Reading case text and judicial orders via a language model is **planned future work**.
+- Party/advocate gender fields (`female_petitioner_clean`, `has_female_adv_pet`, etc.) can encode demographic bias. Planned mitigations: fairness audit (disparate impact, equalized odds), optional ablation of gender features (`--drop-features female_petitioner_clean ...`), and keeping a human DLSA decision-maker in the loop at all times. This tool is **advisory only**.
 
 ---
 
@@ -151,7 +171,7 @@ The API docs are available at `http://127.0.0.1:8000/docs`.
 ## 5. Running the Frontend Application
 
 ```bash
-cd Nyaya_Setu/frontend
+cd frontend
 
 # 1. Install dependencies
 npm install
@@ -177,9 +197,9 @@ source .venv/bin/activate
 pytest -v
 ```
 
-All 15 automated test cases verify:
+The automated tests verify:
 - Rule-first statutory exclusion logic (`tests/test_rules.py`)
 - End-to-end inference and SHAP narrative translations (`tests/test_inference.py`)
 - FastAPI contract validation and HTTP responses (`tests/test_api.py`)
-- Standalone model training smoke pipeline (`tests/test_train_smoke.py`)
+- Training pipeline on synthetic data, including that the leakage audit flags a state-shortcut label (`tests/test_train_smoke.py`)
 

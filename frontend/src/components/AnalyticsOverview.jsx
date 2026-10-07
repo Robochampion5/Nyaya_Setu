@@ -1,7 +1,17 @@
-import React from 'react';
-import { BarChart3, TrendingUp, Users, Clock, Scale, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BarChart3, TrendingUp, Users, Clock, Scale, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { checkBackendHealth } from '../services/api';
+
+const pct = (v) => (typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : '—');
+const fixed = (v) => (typeof v === 'number' ? v.toFixed(3) : '—');
 
 export default function AnalyticsOverview() {
+  const [validation, setValidation] = useState(null);
+
+  useEffect(() => {
+    checkBackendHealth().then((h) => setValidation(h.validation || null));
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Top Headline Cards */}
@@ -20,12 +30,12 @@ export default function AnalyticsOverview() {
 
         <div className="bg-slate-950/70 border border-emerald-900/50 rounded-2xl p-5 shadow-xl">
           <div className="flex items-center justify-between text-emerald-400 text-xs mb-2">
-            <span>Statutory ADR Suitability Rate</span>
+            <span>ADR Label Rate (Historical)</span>
             <ShieldCheck className="w-4 h-4" />
           </div>
           <div className="text-3xl font-bold font-serif text-emerald-400">86.5%</div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Pre-trial civil & compoundable cases
+            Share of eligible filings labelled ADR-positive in the source data
           </div>
         </div>
 
@@ -83,29 +93,41 @@ export default function AnalyticsOverview() {
           </div>
         </div>
 
-        {/* Model Accuracy & Validation Metrics */}
+        {/* Model Accuracy & Validation Metrics (live from training metadata) */}
         <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-6 shadow-xl space-y-4">
           <h4 className="text-base font-bold font-serif text-white flex items-center space-x-2">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <span>AI Model Validation Metrics (10 Lakh Sample)</span>
+            <span>Model Validation (Held-Out Test Split)</span>
           </h4>
+
+          {validation?.leakage_suspected && (
+            <div className="flex items-start space-x-2 bg-amber-950/40 border border-amber-700/50 rounded-xl p-3 text-[11px] text-amber-200 leading-relaxed">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
+              <div>
+                <strong>Under audit:</strong> scores are higher than court-outcome data normally allows.
+                Treat as historical-label fit, not real-world accuracy.
+                {validation.warnings?.[0] && <div className="mt-1 text-amber-300/80">{validation.warnings[0]}</div>}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-              <div className="text-[11px] text-slate-400">ROC-AUC Score</div>
-              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">1.0000</div>
-              <div className="text-[10px] text-slate-500">Perfect rank discrimination</div>
+              <div className="text-[11px] text-slate-400">ROC-AUC</div>
+              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">{fixed(validation?.roc_auc)}</div>
+              <div className="text-[10px] text-slate-500">Rank discrimination on test split</div>
             </div>
 
             <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-              <div className="text-[11px] text-slate-400">Precision (ADR Target)</div>
-              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">99.99%</div>
-              <div className="text-[10px] text-slate-500">Zero false referral risk</div>
+              <div className="text-[11px] text-slate-400">Accuracy vs. Majority Baseline</div>
+              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">{pct(validation?.accuracy)}</div>
+              <div className="text-[10px] text-slate-500">Always-predict-ADR scores {pct(validation?.majority_class_accuracy)}</div>
             </div>
 
             <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-              <div className="text-[11px] text-slate-400">Recall (ADR Target)</div>
-              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">99.99%</div>
-              <div className="text-[10px] text-slate-500">Captures all eligible matters</div>
+              <div className="text-[11px] text-slate-400">Unseen-State AUC</div>
+              <div className="text-xl font-bold font-serif text-emerald-400 mt-1">{fixed(validation?.leave_state_out_auc_mean)}</div>
+              <div className="text-[10px] text-slate-500">Leave-state-out cross-validation</div>
             </div>
 
             <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
@@ -116,7 +138,8 @@ export default function AnalyticsOverview() {
           </div>
 
           <p className="text-[11px] text-slate-400 leading-relaxed pt-2">
-            Evaluated with 800,000 training instances and 200,000 held-out test instances from Indian District Court filings.
+            Predicts historical ADR labels, not legal merit. Advisory only: a DLSA decision-maker makes every referral.
+            {validation?.n_test ? ` Evaluated on ${validation.n_test.toLocaleString()} held-out cases.` : ''}
           </p>
         </div>
 

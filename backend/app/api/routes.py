@@ -25,6 +25,30 @@ from backend.app.services.model_loader import model_manager
 router = APIRouter()
 
 
+def _validation_summary() -> Dict[str, Any]:
+    """Held-out metrics and honesty flags from the training metadata (never hard-coded)."""
+    meta = model_manager.metadata
+    m = meta.get("metrics", {})
+    audit = meta.get("leakage_audit", {}) or {}
+    cv = meta.get("leave_state_out_cv") or {}
+    warnings = list(audit.get("warnings", []))
+    if m.get("roc_auc", 0) >= 0.98 and not audit:
+        warnings.append("Near-perfect score on a legacy artifact with no leakage audit; retrain with train.py.")
+    return {
+        "roc_auc": m.get("roc_auc"),
+        "pr_auc": m.get("pr_auc"),
+        "accuracy": m.get("accuracy"),
+        "majority_class_accuracy": m.get("majority_class_accuracy"),
+        "f1_score_adr": m.get("f1_score_adr"),
+        "leave_state_out_auc_mean": cv.get("auc_mean"),
+        "n_test": (meta.get("data") or {}).get("n_test"),
+        "artifact_version": meta.get("version"),
+        "leakage_suspected": bool(warnings),
+        "warnings": warnings,
+        "caveats": meta.get("caveats", []),
+    }
+
+
 @router.get("/health", response_model=HealthResponse, tags=["Health"])
 def health_check():
     """Service health and readiness check."""
@@ -36,6 +60,7 @@ def health_check():
         model_name=model_manager.metadata.get("model_name", "Unloaded / Heuristic"),
         features_count=len(model_manager.features),
         uptime_seconds=round(uptime, 1),
+        validation=_validation_summary(),
     )
 
 

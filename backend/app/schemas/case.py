@@ -92,6 +92,7 @@ class HealthResponse(BaseModel):
     model_name: Optional[str] = None
     features_count: int
     uptime_seconds: float
+    validation: Optional[Dict[str, Any]] = None
 
 
 class ReferenceDataResponse(BaseModel):

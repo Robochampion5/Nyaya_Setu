@@ -1,175 +1,261 @@
 {
-  "version": "1.0.0",
-  "created_at": "2026-08-22T15:38:49.226905Z",
-  "model_name": "XGBoost",
+  "version": "2.0.0",
+  "created_at": "2026-10-07T19:57:18.090496+00:00",
+  "model_name": "LightGBM",
   "features": [
-    "state_code",
-    "dist_code",
-    "court_no",
     "female_petitioner_clean",
     "female_defendant_clean",
     "has_female_adv_pet",
     "has_female_adv_def",
     "case_age_days",
     "first_listing_delay",
-    "statutory_eligible",
     "type_name_val_freq",
     "purpose_name_val_freq",
     "judge_position_freq"
+  ],
+  "excluded_features": [
+    "state_code",
+    "dist_code",
+    "court_no",
+    "statutory_eligible"
   ],
   "target": "is_adr_target",
   "decision_thresholds": {
     "lok_adalat_threshold": 0.65,
     "mediation_threshold": 0.4,
-    "trial_threshold": 0.4
+    "trial_threshold": 0.4,
+    "validation_tuned_binary_threshold": 0.58
+  },
+  "data": {
+    "n_total_modelled": 868783,
+    "n_train": 608148,
+    "n_val": 130317,
+    "n_test": 130318,
+    "statutory_eligible_only": true,
+    "frequency_maps_fit_on": "train_split_only"
   },
   "metrics": {
-    "model_name": "XGBoost",
-    "roc_auc": 1.0,
-    "accuracy": 0.99989,
-    "precision_adr": 0.9999,
-    "recall_adr": 0.99998,
-    "f1_score_adr": 0.99994,
-    "precision_macro": 0.99989,
-    "recall_macro": 0.99966,
-    "f1_score_macro": 0.99978,
+    "model_name": "LightGBM",
+    "threshold": 0.58,
+    "roc_auc": 0.99996,
+    "pr_auc": 0.99999,
+    "brier_score": 0.00127,
+    "accuracy": 0.99856,
+    "majority_class_accuracy": 0.84483,
+    "adr_base_rate": 0.84483,
+    "precision_adr": 0.99905,
+    "recall_adr": 0.99925,
+    "f1_score_adr": 0.99915,
+    "precision_macro": 0.99747,
+    "recall_macro": 0.99703,
+    "f1_score_macro": 0.99725,
     "confusion_matrix": [
       [
-        26973,
-        18
+        20116,
+        105
       ],
       [
-        3,
-        173006
+        83,
+        110014
       ]
     ],
     "classification_report": {
       "0": {
-        "precision": 0.9998887900355872,
-        "recall": 0.9993331110370124,
-        "f1-score": 0.9996108733114681,
-        "support": 26991.0
+        "precision": 0.9958908856874102,
+        "recall": 0.9948073784679293,
+        "f1-score": 0.9953488372093023,
+        "support": 20221.0
       },
       "1": {
-        "precision": 0.9998959681893841,
-        "recall": 0.9999826598616257,
-        "f1-score": 0.9999393121465294,
-        "support": 173009.0
+        "precision": 0.9990464860741561,
+        "recall": 0.9992461193311353,
+        "f1-score": 0.9991462927307734,
+        "support": 110097.0
       },
-      "accuracy": 0.999895,
+      "accuracy": 0.9985573750364493,
       "macro avg": {
-        "precision": 0.9998923791124856,
-        "recall": 0.999657885449319,
-        "f1-score": 0.9997750927289988,
-        "support": 200000.0
+        "precision": 0.9974686858807832,
+        "recall": 0.9970267488995324,
+        "f1-score": 0.9972475649700379,
+        "support": 130318.0
       },
       "weighted avg": {
-        "precision": 0.9998949994616385,
-        "recall": 0.999895,
-        "f1-score": 0.9998949876835437,
-        "support": 200000.0
+        "precision": 0.9985568423148874,
+        "recall": 0.9985573750364493,
+        "f1-score": 0.9985570544973776,
+        "support": 130318.0
       }
     },
-    "train_duration_sec": 1.47
+    "train_duration_sec": 3.5,
+    "best_n_trees": 250
   },
   "benchmark_summary": {
     "xgboost": {
       "model_name": "XGBoost",
-      "roc_auc": 1.0,
-      "accuracy": 0.99989,
-      "precision_adr": 0.9999,
-      "recall_adr": 0.99998,
-      "f1_score_adr": 0.99994,
-      "precision_macro": 0.99989,
-      "recall_macro": 0.99966,
-      "f1_score_macro": 0.99978,
+      "threshold": 0.6,
+      "roc_auc": 0.99994,
+      "pr_auc": 0.99999,
+      "brier_score": 0.00172,
+      "accuracy": 0.99783,
+      "majority_class_accuracy": 0.84483,
+      "adr_base_rate": 0.84483,
+      "precision_adr": 0.9986,
+      "recall_adr": 0.99883,
+      "f1_score_adr": 0.99871,
+      "precision_macro": 0.99611,
+      "recall_macro": 0.99561,
+      "f1_score_macro": 0.99586,
       "confusion_matrix": [
         [
-          26973,
-          18
+          20067,
+          154
         ],
         [
-          3,
-          173006
+          129,
+          109968
         ]
       ],
       "classification_report": {
         "0": {
-          "precision": 0.9998887900355872,
-          "recall": 0.9993331110370124,
-          "f1-score": 0.9996108733114681,
-          "support": 26991.0
+          "precision": 0.993612596553773,
+          "recall": 0.9923841550862964,
+          "f1-score": 0.9929979958928173,
+          "support": 20221.0
         },
         "1": {
-          "precision": 0.9998959681893841,
-          "recall": 0.9999826598616257,
-          "f1-score": 0.9999393121465294,
-          "support": 173009.0
+          "precision": 0.9986015510070649,
+          "recall": 0.998828305948391,
+          "f1-score": 0.998714915606737,
+          "support": 110097.0
         },
-        "accuracy": 0.999895,
+        "accuracy": 0.9978283890176338,
         "macro avg": {
-          "precision": 0.9998923791124856,
-          "recall": 0.999657885449319,
-          "f1-score": 0.9997750927289988,
-          "support": 200000.0
+          "precision": 0.996107073780419,
+          "recall": 0.9956062305173436,
+          "f1-score": 0.9958564557497771,
+          "support": 130318.0
         },
         "weighted avg": {
-          "precision": 0.9998949994616385,
-          "recall": 0.999895,
-          "f1-score": 0.9998949876835437,
-          "support": 200000.0
+          "precision": 0.9978274319444641,
+          "recall": 0.9978283890176338,
+          "f1-score": 0.9978278406551941,
+          "support": 130318.0
         }
       },
-      "train_duration_sec": 1.47
+      "train_duration_sec": 7.7,
+      "best_n_trees": 250
     },
     "lightgbm": {
       "model_name": "LightGBM",
-      "roc_auc": 1.0,
-      "accuracy": 0.99987,
-      "precision_adr": 0.99985,
-      "recall_adr": 1.0,
-      "f1_score_adr": 0.99992,
-      "precision_macro": 0.99992,
-      "recall_macro": 0.99952,
-      "f1_score_macro": 0.99972,
+      "threshold": 0.58,
+      "roc_auc": 0.99996,
+      "pr_auc": 0.99999,
+      "brier_score": 0.00127,
+      "accuracy": 0.99856,
+      "majority_class_accuracy": 0.84483,
+      "adr_base_rate": 0.84483,
+      "precision_adr": 0.99905,
+      "recall_adr": 0.99925,
+      "f1_score_adr": 0.99915,
+      "precision_macro": 0.99747,
+      "recall_macro": 0.99703,
+      "f1_score_macro": 0.99725,
       "confusion_matrix": [
         [
-          26965,
-          26
+          20116,
+          105
         ],
         [
-          0,
-          173009
+          83,
+          110014
         ]
       ],
       "classification_report": {
         "0": {
-          "precision": 1.0,
-          "recall": 0.9990367159423511,
-          "f1-score": 0.9995181258803469,
-          "support": 26991.0
+          "precision": 0.9958908856874102,
+          "recall": 0.9948073784679293,
+          "f1-score": 0.9953488372093023,
+          "support": 20221.0
         },
         "1": {
-          "precision": 0.9998497413818014,
-          "recall": 1.0,
-          "f1-score": 0.9999248650460635,
-          "support": 173009.0
+          "precision": 0.9990464860741561,
+          "recall": 0.9992461193311353,
+          "f1-score": 0.9991462927307734,
+          "support": 110097.0
         },
-        "accuracy": 0.99987,
+        "accuracy": 0.9985573750364493,
         "macro avg": {
-          "precision": 0.9999248706909007,
-          "recall": 0.9995183579711755,
-          "f1-score": 0.9997214954632052,
-          "support": 200000.0
+          "precision": 0.9974686858807832,
+          "recall": 0.9970267488995324,
+          "f1-score": 0.9972475649700379,
+          "support": 130318.0
         },
         "weighted avg": {
-          "precision": 0.9998700195336203,
-          "recall": 0.99987,
-          "f1-score": 0.9998699735619543,
-          "support": 200000.0
+          "precision": 0.9985568423148874,
+          "recall": 0.9985573750364493,
+          "f1-score": 0.9985570544973776,
+          "support": 130318.0
         }
       },
-      "train_duration_sec": 1.2
+      "train_duration_sec": 3.5,
+      "best_n_trees": 250
     }
-  }
+  },
+  "leakage_audit": {
+    "single_feature_auc": {
+      "state_code": 1.0,
+      "type_name_val_freq": 0.9449,
+      "purpose_name_val_freq": 0.9433,
+      "judge_position_freq": 0.9338,
+      "court_no": 0.8718,
+      "dist_code": 0.8229,
+      "first_listing_delay": 0.6585,
+      "case_age_days": 0.62,
+      "female_defendant_clean": 0.5211,
+      "female_petitioner_clean": 0.5169,
+      "has_female_adv_pet": 0.5118,
+      "has_female_adv_def": 0.5074,
+      "statutory_eligible": 0.5
+    },
+    "warnings": [
+      "`state_code` alone reaches validation AUC 1.000 - likely a label proxy or data-source artefact.",
+      "`type_name_val_freq` alone reaches validation AUC 0.945 - likely a label proxy or data-source artefact.",
+      "`purpose_name_val_freq` alone reaches validation AUC 0.943 - likely a label proxy or data-source artefact.",
+      "`judge_position_freq` alone reaches validation AUC 0.934 - likely a label proxy or data-source artefact.",
+      "With geography allowed, `state_code` carries 2000% of model importance: the label tracks where the record came from, not the dispute.",
+      "Leave-state-out AUC (0.648) is far below the random-split AUC (1.000): the model does not transfer across states.",
+      "Test AUC 1.0000 is implausibly high for court-outcome data; check how `is_adr_target` was derived (e.g. from disp_name_val) and whether any feature encodes it."
+    ],
+    "geography_only_auc": 1.0,
+    "val_auc_with_geo_features": 0.9999,
+    "feature_importance_with_geo": {
+      "state_code": 20.0,
+      "type_name_val_freq": 7.0,
+      "judge_position_freq": 5.0,
+      "dist_code": 4.0,
+      "has_female_adv_pet": 1.0,
+      "has_female_adv_def": 1.0,
+      "court_no": 1.0,
+      "female_petitioner_clean": 0.0,
+      "female_defendant_clean": 0.0,
+      "case_age_days": 0.0,
+      "first_listing_delay": 0.0,
+      "purpose_name_val_freq": 0.0
+    }
+  },
+  "leave_state_out_cv": {
+    "n_folds": 2,
+    "auc_per_fold": [
+      0.5545,
+      0.7418
+    ],
+    "auc_mean": 0.6482,
+    "auc_min": 0.5545
+  },
+  "caveats": [
+    "LEAKAGE SUSPECTED - see leakage_audit. Do not present these scores as real-world accuracy.",
+    "Labels are historical outcomes (is_adr_target); the model predicts historical patterns, not what is legally or ethically right.",
+    "The model is tabular only (XGBoost/LightGBM). No text or language model is used.",
+    "Advisory screening tool: a human DLSA decision-maker makes the referral."
+  ]
 }
