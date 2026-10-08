@@ -84,14 +84,16 @@ export default function BatchScreening() {
 
   const handleExportCSV = () => {
     if (!batchData?.results) return;
-    const headers = ['Case ID', 'Suitability %', 'Recommendation', 'Statutory Status', 'Confidence', 'Primary Driver'];
+    const headers = ['Case ID', 'Suitability %', 'Recommendation', 'Statutory Status', 'Confidence', 'Matched As', 'Match Confidence %', 'Primary Driver'];
     const rows = batchData.results.map((r) => [
       r.case_id,
       r.suitability_score,
       r.recommendation,
       r.statutory_status,
       r.confidence_tier,
-      `"${(r.top_reasons[0] || '').replace(/"/g, '""')}"`,
+      `"${(r.matched_as || '').replace(/"/g, '""')}"`,
+      r.match_confidence ? Math.round(r.match_confidence * 100) : 100,
+      `"${(r.top_reasons?.[0] || '').replace(/"/g, '""')}"`,
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -287,7 +289,13 @@ export default function BatchScreening() {
                         }`}
                       >
                         <td className="py-2.5 px-3 font-mono text-slate-200 font-medium">
-                          {r.case_id}
+                          <div>{r.case_id}</div>
+                          {!r.match_is_known && r.matched_as && (
+                            <div className="text-[10px] text-sky-400 font-sans font-normal mt-0.5 flex items-center gap-1" title={`Semantically mapped to: ${r.matched_as}`}>
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                              <span className="truncate max-w-[130px]">Mapped: {r.matched_as} ({Math.round((r.match_confidence || 0) * 100)}%)</span>
+                            </div>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 font-mono font-bold">
                           <span className={
@@ -330,6 +338,12 @@ export default function BatchScreening() {
                         <tr className="bg-slate-950/80">
                           <td colSpan={7} className="p-3 border-b border-slate-800">
                             <div className="bg-slate-900/90 rounded-lg p-3 border border-slate-800 space-y-2 text-xs">
+                              {!r.match_is_known && r.matched_as && (
+                                <div className="p-2 bg-sky-950/40 border border-sky-800/40 rounded text-sky-300 text-xs flex items-center justify-between">
+                                  <span><strong>Semantic Vector Mapping:</strong> Unlisted case category was mapped to closest legal precedent <strong>"{r.matched_as}"</strong>.</span>
+                                  <span className="font-mono text-[11px] bg-sky-900/60 px-1.5 py-0.5 rounded">{Math.round((r.match_confidence || 0) * 100)}% similarity</span>
+                                </div>
+                              )}
                               <div className="font-bold text-slate-200">SHAP Attributions for {r.case_id}:</div>
                               <ul className="space-y-0.5 text-slate-300 list-disc list-inside">
                                 {(r.top_reasons || []).map((reason, i) => (

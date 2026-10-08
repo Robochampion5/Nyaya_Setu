@@ -59,6 +59,10 @@ class CaseScoreResponse(BaseModel):
     shap_factors: List[ShapFactor] = Field(default_factory=list, description="Structured SHAP breakdown")
     statutory_notes: List[str] = Field(default_factory=list, description="Statutory compliance and Section 89 references")
     execution_time_ms: float = Field(default=0.0, description="Scoring latency in milliseconds")
+    # Semantic category matching metadata (Option D2)
+    matched_as: Optional[str] = Field(default=None, description="Nearest vocabulary entry the input was mapped to")
+    match_confidence: Optional[float] = Field(default=None, description="Cosine similarity score (0.0–1.0)")
+    match_is_known: bool = Field(default=True, description="True if input matched exactly; False if semantic mapping was used")
 
 
 class BatchScoreRequest(BaseModel):

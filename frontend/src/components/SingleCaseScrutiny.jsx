@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Scale, AlertTriangle, CheckCircle2, ShieldAlert, Clock, 
-  RefreshCw, FileText, Printer, X, Activity, Copy, Check, Sparkles
+  RefreshCw, FileText, Printer, X, Activity, Copy, Check, Sparkles,
+  GitMerge, Info
 } from 'lucide-react';
 import ScoreGauge from './ScoreGauge';
 import ShapWaterfall from './ShapWaterfall';
@@ -155,28 +156,122 @@ export default function SingleCaseScrutiny({ referenceData }) {
             {/* Matter Category & Hearing Stage */}
             <div>
               <label className="block text-slate-400 text-[11px] mb-0.5">Case Category</label>
-              <select
+              <input
+                type="text"
+                list="case-type-datalist"
                 value={formData.type_name_val || ''}
                 onChange={(e) => {
                   const val = e.target.value;
-                  const isExcluded = val.includes('bail') || val.includes('cbi') || val.includes('murder');
+                  const isExcluded = val.toLowerCase().includes('bail') || val.toLowerCase().includes('cbi') || val.toLowerCase().includes('murder');
                   setFormData({
                     ...formData,
                     type_name_val: val,
                     statutory_eligible: isExcluded ? 0 : 1,
                   });
+                  setActivePreset(null);
                 }}
+                placeholder="Type any case category…"
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-amber-500 text-xs"
-              >
-                <option value="ni act (cheque bounce)">NI Act §138 (Cheque Bounce)</option>
-                <option value="s.c.c.">Small Causes Court (S.C.C.)</option>
-                <option value="mcop">Motor Accident Claim (MCOP / MACT)</option>
-                <option value="civil suit">Civil Suit (Property / Money)</option>
-                <option value="matrimonial maintenance">Matrimonial Maintenance</option>
-                <option value="cri. case">Criminal Case (Compoundable)</option>
-                <option value="bail appln cbi">Bail Application [EXCLUDED]</option>
-                <option value="murder u/s 302 ipc">IPC §302 Murder [EXCLUDED]</option>
-              </select>
+              />
+              <datalist id="case-type-datalist">
+                <option value="ni act (cheque bounce)" />
+                <option value="s.c.c." />
+                <option value="mcop" />
+                <option value="civil suit" />
+                <option value="matrimonial maintenance" />
+                <option value="cri. case" />
+                <option value="money suit" />
+                <option value="motor accident" />
+                <option value="land acquisition" />
+                <option value="consumer dispute" />
+                <option value="labour dispute" />
+                <option value="rent control" />
+                <option value="bail appln cbi" />
+                <option value="murder u/s 302 ipc" />
+              </datalist>
+
+              {/* Most Common Types Chip Row */}
+              <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+                <span className="text-slate-500 uppercase tracking-wider">Most Common</span>
+                <button
+                  type="button"
+                  value="ni act (cheque bounce)"
+                  onClick={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      type_name_val: val,
+                      statutory_eligible: val.toLowerCase().includes('bail') || val.toLowerCase().includes('cbi') || val.toLowerCase().includes('murder') ? 0 : 1,
+                    });
+                    setActivePreset(null);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-950 hover:text-white transition"
+                >
+                  NI Act
+                </button>
+                <button
+                  type="button"
+                  value="s.c.c."
+                  onClick={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      type_name_val: val,
+                    });
+                    setActivePreset(null);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-950 hover:text-white transition"
+                >
+                  S.C.C.
+                </button>
+                <button
+                  type="button"
+                  value="mcop"
+                  onClick={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      type_name_val: val,
+                    });
+                    setActivePreset(null);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-950 hover:text-white transition"
+                >
+                  MCOP
+                </button>
+                <button
+                  type="button"
+                  value="civil suit"
+                  onClick={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      type_name_val: val,
+                    });
+                    setActivePreset(null);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-950 hover:text-white transition"
+                >
+                  Civil
+                </button>
+                <button
+                  type="button"
+                  value="matrimonial maintenance"
+                  onClick={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      type_name_val: val,
+                    });
+                    setActivePreset(null);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-950 hover:text-white transition"
+                >
+                  Maintenance
+                </button>
+              </div>
+
+              <p className="text-[10px] text-slate-500 mt-1.5">Free text — unlisted types are mapped semantically</p>
             </div>
 
             <div>
@@ -320,6 +415,27 @@ export default function SingleCaseScrutiny({ referenceData }) {
                   <div className="mt-0.5">{result.recommendation}</div>
                 </div>
               </div>
+
+              {/* Semantic Match Badge */}
+              {!result.match_is_known && result.matched_as && (
+                <div className={`flex items-start gap-2 px-3 py-2 rounded-lg border text-xs ${
+                  (result.match_confidence || 0) >= 0.65
+                    ? 'bg-sky-950/30 border-sky-700/40 text-sky-300'
+                    : 'bg-amber-950/30 border-amber-700/40 text-amber-300'
+                }`}>
+                  <GitMerge className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold">Semantically mapped</span> to{' '}
+                    <span className="font-mono font-bold">"{result.matched_as}"</span>
+                    {' '}({Math.round((result.match_confidence || 0) * 100)}% similarity)
+                    {(result.match_confidence || 0) < 0.65 && (
+                      <span className="block mt-0.5 text-amber-400/80">
+                        Low confidence — consider entering a more specific category.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* ADR Status Node & Verdict */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">

@@ -15,6 +15,7 @@ import pandas as pd
 
 from backend.app.core.config import settings
 from backend.app.services.explainer import ShapExplainerService
+from backend.app.services.category_matcher import category_matcher as _category_matcher
 
 logger = logging.getLogger("NyayaSetuModelLoader")
 
@@ -33,6 +34,7 @@ class ModelManager:
         self.is_loaded: bool = False
         self.load_error: Optional[str] = None
         self.start_time: float = time.time()
+        self.category_matcher = _category_matcher
 
     @classmethod
     def get_instance(cls) -> "ModelManager":
@@ -79,6 +81,15 @@ class ModelManager:
 
             if self.model is not None:
                 self.explainer_service = ShapExplainerService(self.model, background_sample)
+
+            # 5. Initialize Semantic Category Matcher (Option D2)
+            if self.frequency_maps:
+                logger.info("CategoryMatcher: Initializing semantic embedding index…")
+                matcher_ok = self.category_matcher.initialize(self.frequency_maps)
+                if matcher_ok:
+                    logger.info("CategoryMatcher: Ready with %d vocabulary entries.", len(self.frequency_maps.get("type_name_val_freq_map", {})))
+                else:
+                    logger.warning("CategoryMatcher: Initialization failed; will fall back to substring matching.")
 
             self.is_loaded = self.model is not None
             return self.is_loaded

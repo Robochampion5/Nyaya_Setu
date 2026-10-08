@@ -7,7 +7,7 @@ model prediction, and TreeSHAP explainability for single cases and bulk cause li
 
 import logging
 import time
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
@@ -61,12 +61,62 @@ class InferenceService:
                     "Matter must proceed for regular contested trial under Civil/Criminal Procedure Codes.",
                 ],
                 execution_time_ms=exec_time,
+                matched_as=case.type_name_val,
+                match_confidence=1.0,
+                match_is_known=True,
             )
 
         # ---------------------------------------------------------
-        # 2. Build Feature Vector
+        # 2. Resolve Case Type via Semantic Category Matcher (Option D2)
         # ---------------------------------------------------------
-        type_freq = case.type_name_val_freq or model_manager.get_type_freq(case.type_name_val)
+        matched_as: Optional[str] = case.type_name_val
+        match_confidence: Optional[float] = 1.0
+        match_is_known: bool = True
+        type_freq: float
+
+        if case.type_name_val_freq is not None:
+            # Caller pre-computed the frequency; skip matching
+            type_freq = case.type_name_val_freq
+        elif model_manager.category_matcher.is_ready and case.type_name_val:
+            _matched_cat, _freq, _sim, _is_known = model_manager.category_matcher.match(case.type_name_val)
+            type_freq = _freq
+            matched_as = _matched_cat if _matched_cat else case.type_name_val
+            match_confidence = round(_sim, 3)
+            match_is_known = _is_known
+
+            # If matched category triggers statutory exclusion, exclude it immediately
+            if matched_as:
+                is_m_eligible, m_status, m_reasons = StatutoryRuleEngine.evaluate_case(
+                    type_name_val=matched_as,
+                    purpose_name_val=case.purpose_name_val,
+                )
+                if not is_m_eligible:
+                    exec_time = round((time.time() - start_t) * 1000.0, 2)
+                    return CaseScoreResponse(
+                        case_id=case_id,
+                        suitability_score=0.0,
+                        suitability_percentage=0.0,
+                        recommendation="Trial",
+                        statutory_status=m_status,
+                        confidence_tier="Excluded",
+                        is_statutory_eligible=False,
+                        top_reasons=m_reasons,
+                        shap_factors=[],
+                        statutory_notes=[
+                            f"Mapped to '{matched_as}' which is barred from mediation under First Schedule, Mediation Act 2023.",
+                            "Matter must proceed for regular contested trial under Civil/Criminal Procedure Codes.",
+                        ],
+                        execution_time_ms=exec_time,
+                        matched_as=matched_as,
+                        match_confidence=match_confidence,
+                        match_is_known=match_is_known,
+                    )
+        else:
+            type_freq = model_manager.get_type_freq(case.type_name_val)
+
+        # ---------------------------------------------------------
+        # 3. Build Feature Vector
+        # ---------------------------------------------------------
         purpose_freq = case.purpose_name_val_freq or model_manager.get_purpose_freq(case.purpose_name_val)
         judge_freq = case.judge_position_freq or model_manager.get_judge_freq()
 
@@ -120,22 +170,27 @@ class InferenceService:
         # 4. TreeSHAP Explainability
         # ---------------------------------------------------------
         top_reasons, shap_factors = [], []
+        explainer_type_str = (
+            f"{case.type_name_val} (mapped to {matched_as})"
+            if (matched_as and not match_is_known and matched_as != case.type_name_val)
+            else (matched_as or case.type_name_val)
+        )
         if model_manager.explainer_service is not None:
             top_reasons, shap_factors = model_manager.explainer_service.explain_instance(
                 feature_df=feature_df,
-                raw_case_type=case.type_name_val,
+                raw_case_type=explainer_type_str,
                 raw_purpose=case.purpose_name_val,
                 case_age_days=case.case_age_days,
             )
         else:
             top_reasons = [
-                f"Case type '{case.type_name_val or 'Civil'}' has favorable settlement precedent under Section 89 CPC.",
+                f"Case type '{explainer_type_str or 'Civil'}' has favorable settlement precedent under Section 89 CPC.",
                 f"Stage '{case.purpose_name_val or 'Hearing'}' allows effective conciliation before trial escalation.",
                 f"Pendency of {int(case.case_age_days)} days qualifies for DLSA fast-track screening.",
             ]
 
         # Statutory context notes
-        statutory_notes = StatutoryRuleEngine.get_statutory_context(case.type_name_val)
+        statutory_notes = StatutoryRuleEngine.get_statutory_context(matched_as or case.type_name_val)
         if not statutory_notes:
             statutory_notes.append("Statutory eligible under Section 89 CPC for court-annexed mediation.")
 
@@ -153,6 +208,9 @@ class InferenceService:
             shap_factors=shap_factors,
             statutory_notes=statutory_notes,
             execution_time_ms=exec_time,
+            matched_as=matched_as,
+            match_confidence=match_confidence,
+            match_is_known=match_is_known,
         )
 
     @staticmethod
