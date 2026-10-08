@@ -321,9 +321,9 @@ export default function SingleCaseScrutiny({ referenceData }) {
                 </div>
               </div>
 
-              {/* Gauge & Main Verdict */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-                <div className="md:col-span-5 flex justify-center">
+              {/* ADR Status Node & Verdict */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
+                <div className="shrink-0">
                   <ScoreGauge
                     score={result.suitability_score}
                     recommendation={result.recommendation}
@@ -331,8 +331,8 @@ export default function SingleCaseScrutiny({ referenceData }) {
                   />
                 </div>
 
-                <div className="md:col-span-7 space-y-2 text-xs">
-                  <div className="text-slate-200 font-semibold">
+                <div className="space-y-2 text-xs flex-1">
+                  <div className="text-slate-200 font-semibold text-sm">
                     {result.recommendation === 'Lok Adalat' && 'Refer to National Lok Adalat Bench'}
                     {result.recommendation === 'Mediation' && 'Refer to Court-Annexed Mediation Centre'}
                     {result.recommendation === 'Trial' && 'Retain on Regular Trial Court Board'}

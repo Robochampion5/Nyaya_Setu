@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 export default function ShapWaterfall({ shapFactors = [], topReasons = [], isStatutoryEligible = true }) {
   if (!isStatutoryEligible) {
@@ -22,28 +22,10 @@ export default function ShapWaterfall({ shapFactors = [], topReasons = [], isSta
 
   return (
     <div className="space-y-3">
-      {/* Top Plain English Reasons */}
-      <div className="space-y-1.5">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          Judicial Decision Drivers
-        </div>
-        <div className="space-y-1.5">
-          {topReasons.map((reason, idx) => (
-            <div
-              key={idx}
-              className="flex items-start space-x-2 bg-slate-900/80 border border-slate-800 p-2 rounded-lg text-xs text-slate-300"
-            >
-              <span className="text-amber-400 font-bold">{idx + 1}.</span>
-              <span>{reason}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Visual SHAP Feature Impact Bars */}
+      {/* 1. Attribution Impact (SHAP) — always on top */}
       {shapFactors && shapFactors.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <div className="text-[10px] font-mono text-slate-400 uppercase">
+        <div className="space-y-2">
+          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
             Attribution Impact (SHAP)
           </div>
           <div className="space-y-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
@@ -57,7 +39,7 @@ export default function ShapWaterfall({ shapFactors = [], topReasons = [], isSta
                       {isPositive ? '+' : ''}{factor.impact_percent}%
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         isPositive ? 'bg-emerald-500' : 'bg-rose-500'
@@ -68,6 +50,26 @@ export default function ShapWaterfall({ shapFactors = [], topReasons = [], isSta
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Judicial Decision Drivers — below SHAP */}
+      {topReasons && topReasons.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Judicial Decision Drivers
+          </div>
+          <div className="space-y-1.5">
+            {topReasons.map((reason, idx) => (
+              <div
+                key={idx}
+                className="flex items-start space-x-2 bg-slate-900/80 border border-slate-800 p-2 rounded-lg text-xs text-slate-300"
+              >
+                <span className="text-amber-400 font-bold shrink-0">{idx + 1}.</span>
+                <span>{reason}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}

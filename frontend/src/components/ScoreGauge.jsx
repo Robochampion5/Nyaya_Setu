@@ -1,69 +1,40 @@
 import React from 'react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 export default function ScoreGauge({ score = 0, recommendation = 'Trial', isStatutoryEligible = true }) {
-  const radius = 80;
-  const stroke = 10;
-  const normalizedRadius = radius - stroke;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
-
-  let colorClass = 'text-emerald-400';
-  let glowClass = 'glow-emerald';
-  let strokeColor = '#10B981';
-
-  if (!isStatutoryEligible || score < 40) {
-    colorClass = 'text-rose-500';
-    glowClass = 'glow-crimson';
-    strokeColor = '#EF4444';
-  } else if (score < 65) {
-    colorClass = 'text-amber-400';
-    glowClass = 'glow-gold';
-    strokeColor = '#F59E0B';
-  }
+  const isSuitable = isStatutoryEligible && score >= 50;
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-slate-950/60 rounded-2xl border border-slate-800/80 shadow-inner">
-      <div className={`relative flex items-center justify-center rounded-full ${glowClass}`}>
-        <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
-          <circle
-            stroke="#1E293B"
-            fill="transparent"
-            strokeWidth={stroke}
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-          <circle
-            stroke={strokeColor}
-            fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={circumference + ' ' + circumference}
-            style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.8s ease-in-out' }}
-            strokeLinecap="round"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-        </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
-          <span className={`text-2xl sm:text-[28px] leading-none font-extrabold font-serif tracking-tight tabular-nums ${colorClass}`}>
-            {score.toFixed(1)}%
-          </span>
-          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mt-1">
-            Suitability
-          </span>
+    <div className="flex flex-col items-center justify-center gap-3 py-4">
+      {/* Single-line ADR suitability status node */}
+      <div
+        className={`flex items-center gap-3 px-5 py-3 rounded-2xl border-2 shadow-lg transition-all duration-500 ${
+          isSuitable
+            ? 'bg-emerald-500/10 border-emerald-500/50 shadow-emerald-900/30'
+            : 'bg-rose-500/10 border-rose-500/50 shadow-rose-900/30'
+        }`}
+      >
+        {isSuitable ? (
+          <CheckCircle2 className="w-7 h-7 text-emerald-400 shrink-0" />
+        ) : (
+          <XCircle className="w-7 h-7 text-rose-400 shrink-0" />
+        )}
+        <div className="text-left">
+          <div className={`text-base font-extrabold font-serif leading-tight ${isSuitable ? 'text-emerald-300' : 'text-rose-300'}`}>
+            {isSuitable ? 'ADR Suitable' : 'Not ADR Suitable'}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">
+            {isStatutoryEligible ? 'Statutory: Eligible' : 'Statutory: Barred'}
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 text-center">
-        <div className="text-xs text-slate-400 font-medium mb-1">Committee Recommendation</div>
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800">
-          <span className={`w-2 h-2 rounded-full ${colorClass.replace('text-', 'bg-')}`} />
-          <span className={`text-sm font-bold font-serif ${colorClass}`}>
-            {recommendation}
-          </span>
-        </div>
+      {/* Recommendation pill */}
+      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-700">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${isSuitable ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+        <span className={`text-sm font-bold font-serif ${isSuitable ? 'text-emerald-300' : 'text-rose-300'}`}>
+          {recommendation}
+        </span>
       </div>
     </div>
   );
