@@ -76,7 +76,9 @@ npm run dev
 - **Excluded proceedings**: Bail applications, CBI/NIA/ED cases
 - **Immediate fallback** to Trial with 0% suitability score
 
-### 📊 ML Suitability Ranking
+### 📊 SHAP-Based Suitability Classification
+**Method**: TreeSHAP explainability using exactly 4 parameters — `Mediation Suitability`, `Lok Adalat Suitability`, `Bench Disposal Velocity`, and `First Listing Promptness`. The SHAP impact percentages from these factors determine whether a case is classified as `Mediation`, `Lok Adalat`, or `Trial`. Each recommendation is derived directly from comparing the SHAP attribution values of the suitability parameters, not from model score thresholds alone.
+- **Classification logic**: `mediation_pct > lok_adalat_pct` → Mediation; `lok_adalat_pct > mediation_pct` → Lok Adalat; excluded cases → Trial
 **Models**: XGBoost + LightGBM ensemble with TreeSHAP explainability
 - **Binary classification** for ADR suitability (Lok Adalat / Mediation / Trial)
 - **Feature importance** visualization with plain-English legal explanations
@@ -151,6 +153,11 @@ Nyaya_Setu/
     ├── test_rules.py               # Statutory compliance
     └── test_inference.py           # End-to-end pipeline
 ```
+
+### Unseen-State Generalization
+| Metric | Value |
+|--------|-------|
+| **Unseen-State AUC** | **0.648** | Cross-state holdout validation |
 
 ---
 

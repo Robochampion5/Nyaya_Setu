@@ -17,19 +17,10 @@ logger = logging.getLogger("NyayaSetuExplainer")
 
 # Friendly labels for mathematical features
 FEATURE_DISPLAY_NAMES = {
-    "type_name_val_freq": "Case Type Settlement Precedent",
-    "purpose_name_val_freq": "Proceeding Stage & Hearing Purpose",
-    "case_age_days": "Case Pendency / Age",
-    "first_listing_delay": "First Listing Promptness",
-    "statutory_eligible": "Statutory Eligibility Classification",
-    "has_female_adv_pet": "Petitioner Legal Counsel Representation",
-    "has_female_adv_def": "Defendant Legal Counsel Representation",
-    "female_petitioner_clean": "Petitioner Demographics",
-    "female_defendant_clean": "Defendant Demographics",
+    "type_name_val_freq": "Mediation Suitability",
+    "purpose_name_val_freq": "Lok Adalat Suitability",
     "judge_position_freq": "Bench Disposal Velocity",
-    "state_code": "State Jurisdiction",
-    "dist_code": "District Jurisdiction",
-    "court_no": "Court / Bench Number",
+    "first_listing_delay": "First Listing Promptness",
 }
 
 
@@ -162,13 +153,14 @@ class ShapExplainerService:
             else:
                 return f"Current stage ('{purpose_str}') indicates advanced contested trial hearings."
 
-        elif feat_name == "case_age_days":
-            if case_age_days > 365:
-                return f"Extended pendency ({int(case_age_days)} days) creates strong mutual incentive for expedited Lok Adalat disposal."
-            elif case_age_days < 90:
-                return f"Early stage filing ({int(case_age_days)} days) allows early pre-litigation mediation before heavy trial expenses."
+        elif feat_name == "judge_position_freq":
+            if is_pos:
+                return "Bench roster and court disposal trends favor ADR case referrals."
             else:
-                return f"Case pendency ({int(case_age_days)} days) is within standard ADR screening window."
+                return "Standard court bench disposal trajectory."
+
+        elif feat_name == "first_listing_delay":
+            return f"First listing turnaround timeline ({int(raw_val)} days) indicates active court registry processing."
 
         elif feat_name == "statutory_eligible":
             if is_pos:
@@ -215,7 +207,7 @@ class ShapExplainerService:
         factors = [
             ShapFactor(
                 feature="type_name_val_freq",
-                display_name="Case Type Precedent",
+                display_name="Mediation Suitability",
                 shap_value=0.25,
                 impact_percent=45.0,
                 direction="positive",
@@ -223,19 +215,27 @@ class ShapExplainerService:
             ),
             ShapFactor(
                 feature="purpose_name_val_freq",
-                display_name="Proceeding Stage",
+                display_name="Lok Adalat Suitability",
                 shap_value=0.18,
                 impact_percent=35.0,
                 direction="positive",
                 explanation=reasons[1],
             ),
             ShapFactor(
-                feature="case_age_days",
-                display_name="Case Age",
+                feature="judge_position_freq",
+                display_name="Bench Disposal Velocity",
                 shap_value=0.10,
-                impact_percent=20.0,
+                impact_percent=12.0,
                 direction="positive",
-                explanation=reasons[2],
+                explanation="Bench roster favors ADR referral.",
+            ),
+            ShapFactor(
+                feature="first_listing_delay",
+                display_name="First Listing Promptness",
+                shap_value=0.05,
+                impact_percent=8.0,
+                direction="positive",
+                explanation="First listing indicates active registry processing.",
             ),
         ]
         return reasons, factors

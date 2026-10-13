@@ -4,6 +4,8 @@ import {
   ShieldAlert, Sparkles, FileSpreadsheet, FileText,
   AlertTriangle, ChevronDown, ChevronUp
 } from 'lucide-react';
+import ScoreGauge from './ScoreGauge';
+import ShapWaterfall from './ShapWaterfall';
 import { scoreBatchCases, uploadCauseListCSV } from '../services/api';
 
 const SAMPLE_CAUSE_LIST = [
@@ -269,12 +271,10 @@ export default function BatchScreening() {
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold text-[11px]">
                   <th className="py-2 px-3">Case ID</th>
-                  <th className="py-2 px-3">Suitability</th>
-                  <th className="py-2 px-3">Recommendation</th>
                   <th className="py-2 px-3">Statutory Status</th>
+                  <th className="py-2 px-3">Mediation / Lok Adalat / Trial</th>
                   <th className="py-2 px-3">Confidence</th>
                   <th className="py-2 px-3">Key Legal Driver (SHAP)</th>
-                  <th className="py-2 px-3 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-sans">
@@ -297,24 +297,6 @@ export default function BatchScreening() {
                             </div>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-bold">
-                          <span className={
-                            r.suitability_score >= 65 ? 'text-emerald-400' : r.suitability_score >= 40 ? 'text-amber-400' : 'text-rose-400'
-                          }>
-                            {r.suitability_score.toFixed(1)}%
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
-                            r.recommendation === 'Lok Adalat'
-                              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-                              : r.recommendation === 'Mediation'
-                              ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
-                              : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
-                          }`}>
-                            {r.recommendation}
-                          </span>
-                        </td>
                         <td className="py-2.5 px-3">
                           <span className={`inline-flex items-center space-x-1 text-[11px] ${
                             r.is_statutory_eligible ? 'text-emerald-400' : 'text-rose-400 font-semibold'
@@ -323,33 +305,97 @@ export default function BatchScreening() {
                             <span>{r.statutory_status}</span>
                           </span>
                         </td>
+                        <td className="py-2.5 px-3">
+                          <span className={`inline-flex items-center space-x-1 text-[11px] font-bold ${
+                            r.recommendation === 'Mediation' ? 'text-amber-400' :
+                            r.recommendation === 'Lok Adalat' ? 'text-emerald-400' :
+                            'text-rose-400'
+                          }`}>
+                            {r.recommendation === 'Mediation' ? 'Mediation' :
+                             r.recommendation === 'Lok Adalat' ? 'Lok Adalat' : 'Trial'}
+                          </span>
+                        </td>
                         <td className="py-2.5 px-3 text-slate-400">
                           {r.confidence_tier}
                         </td>
                         <td className="py-2.5 px-3 text-slate-300 max-w-xs truncate" title={r.top_reasons?.[0]}>
                           {r.top_reasons?.[0] || 'Eligible civil matter'}
                         </td>
-                        <td className="py-2.5 px-3 text-right text-slate-400">
-                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-amber-400 inline" /> : <ChevronDown className="w-3.5 h-3.5 inline" />}
-                        </td>
                       </tr>
 
                       {isExpanded && (
                         <tr className="bg-slate-950/80">
-                          <td colSpan={7} className="p-3 border-b border-slate-800">
-                            <div className="bg-slate-900/90 rounded-lg p-3 border border-slate-800 space-y-2 text-xs">
+                          <td colSpan={5} className="p-3 border-b border-slate-800">
+                            <div className="glass-card rounded-xl p-4 space-y-4">
+                              {/* Case Details Header */}
+                              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                                <div className="flex items-center space-x-3">
+                                  <div className="font-mono text-sm font-bold text-white">{r.case_id}</div>
+                                  <div className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${
+                                    r.is_statutory_eligible
+                                      ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+                                  }`}>
+                                    {r.statutory_status}
+                                  </div>
+                                </div>
+                                <div className="text-[11px] text-slate-500">
+                                  Tier: <strong className="text-amber-400">{r.confidence_tier}</strong>
+                                </div>
+                              </div>
+
+                              {/* Semantic Mapping Banner */}
                               {!r.match_is_known && r.matched_as && (
-                                <div className="p-2 bg-sky-950/40 border border-sky-800/40 rounded text-sky-300 text-xs flex items-center justify-between">
-                                  <span><strong>Semantic Vector Mapping:</strong> Unlisted case category was mapped to closest legal precedent <strong>"{r.matched_as}"</strong>.</span>
-                                  <span className="font-mono text-[11px] bg-sky-900/60 px-1.5 py-0.5 rounded">{Math.round((r.match_confidence || 0) * 100)}% similarity</span>
+                                <div className={`flex items-start gap-2 px-3 py-2 rounded-lg border text-xs ${
+                                  (r.match_confidence || 0) >= 0.65
+                                    ? 'bg-sky-950/30 border-sky-700/40 text-sky-300'
+                                    : 'bg-amber-950/30 border-amber-700/40 text-amber-300'
+                                }`}>
+                                  <div className="w-3.5 h-3.5 mt-0.5 shrink-0 rounded-full bg-sky-400 flex items-center justify-center">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Semantically mapped</span> to{' '}
+                                    <span className="font-mono font-bold">"{r.matched_as}"</span>
+                                    {' '}({Math.round((r.match_confidence || 0) * 100)}% similarity)
+                                  </div>
                                 </div>
                               )}
-                              <div className="font-bold text-slate-200">SHAP Attributions for {r.case_id}:</div>
-                              <ul className="space-y-0.5 text-slate-300 list-disc list-inside">
-                                {(r.top_reasons || []).map((reason, i) => (
-                                  <li key={i}>{reason}</li>
-                                ))}
-                              </ul>
+
+                              {/* SHAP Attribution Section — exactly Single Case Scrutiny parameters */}
+                              <ShapWaterfall
+                                shapFactors={(r.shap_factors || []).map((f) => ({
+                                  feature: f.feature || '',
+                                  display_name: f.display_name || f.feature || '',
+                                  impact_percent: f.impact_percent || Math.round(((f.shap_value || 0) / (r.shap_factors?.map(x => Math.abs(x.shap_value || 0)).reduce((a,b)=>a+b, 0) || 1)) * 100) || 0,
+                                  direction: (f.direction || 'positive'),
+                                  shap_value: f.shap_value || 0,
+                                }))}
+                                topReasons={(r.top_reasons || []).slice(0, 4)}
+                                isStatutoryEligible={r.is_statutory_eligible !== false}
+                              />
+
+                              {/* Case Meta Information */}
+                              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                                <div className="space-y-1">
+                                  <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Court Information</div>
+                                  <div className="text-xs text-slate-300">
+                                    {r.case_id?.startsWith('CNR-KA') ? 'Karnataka District Court' :
+                                     r.case_id?.startsWith('CNR-MH') ? 'Maharashtra District Court' :
+                                     r.case_id?.startsWith('CNR-DL') ? 'Delhi District Court' :
+                                     r.case_id?.startsWith('CNR-BR') ? 'Bihar District Court' :
+                                     'District Court'} • Court No: {r.court_no || 1}
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Hearing Stage</div>
+                                  <div className="text-xs text-slate-300 capitalize">
+                                    {r.purpose_name_val || 'appearance'}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>

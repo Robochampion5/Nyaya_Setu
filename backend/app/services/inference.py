@@ -189,6 +189,28 @@ class InferenceService:
                 f"Pendency of {int(case.case_age_days)} days qualifies for DLSA fast-track screening.",
             ]
 
+        # ---------------------------------------------------------
+        # 3b. SHAP-based recommendation override (exact 4-parameter logic)
+        # ---------------------------------------------------------
+        # Read from computed SHAP factors (after TreeSHAP above)
+        mediation_pct = 0.0
+        lok_adalat_pct = 0.0
+        for f in shap_factors:
+            dn = (f.display_name or f.feature or '').lower()
+            if 'mediation suitability' in dn:
+                mediation_pct = f.impact_percent or 0.0
+            elif 'lok adalat suitability' in dn:
+                lok_adalat_pct = f.impact_percent or 0.0
+
+        if is_eligible and (mediation_pct > 0 or lok_adalat_pct > 0):
+            if mediation_pct > lok_adalat_pct:
+                recommendation = "Mediation"
+                confidence_tier = "Moderate"
+            elif lok_adalat_pct > mediation_pct:
+                recommendation = "Lok Adalat"
+                confidence_tier = "High"
+            # else equal — keep threshold-based recommendation
+
         # Statutory context notes
         statutory_notes = StatutoryRuleEngine.get_statutory_context(matched_as or case.type_name_val)
         if not statutory_notes:
@@ -238,6 +260,17 @@ class InferenceService:
                 excluded_count += 1
                 
             total_score += res.suitability_score
+
+        # Sort batch: Mediation (top) -> Lok Adalat (middle) -> Trial (bottom)
+        def sort_key(res):
+            if res.recommendation == "Mediation":
+                return (0, res.case_id)
+            elif res.recommendation == "Lok Adalat":
+                return (1, res.case_id)
+            else:  # Trial / Excluded
+                return (2, res.case_id)
+
+        results.sort(key=sort_key)
 
         total_cases = len(results)
         eligible_count = total_cases - excluded_count
