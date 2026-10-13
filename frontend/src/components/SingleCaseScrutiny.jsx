@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Scale, AlertTriangle, CheckCircle2, ShieldAlert, Clock, 
+import {
+  Scale, AlertTriangle, CheckCircle2, ShieldAlert, Clock,
   RefreshCw, FileText, Printer, X, Activity, Copy, Check, Sparkles,
   GitMerge, Info
 } from 'lucide-react';
 import ScoreGauge from './ScoreGauge';
 import ShapWaterfall from './ShapWaterfall';
-import { scoreSingleCase } from '../services/api';
+import { scoreSingleCase, fetchReferenceData } from '../services/api';
 import { CASE_PRESETS } from '../data/presets';
 
 export default function SingleCaseScrutiny({ referenceData }) {
@@ -17,6 +17,19 @@ export default function SingleCaseScrutiny({ referenceData }) {
   const [error, setError] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [copiedOrder, setCopiedOrder] = useState(false);
+  const [referenceDataState, setReferenceDataState] = useState(null);
+  const [refDataLoading, setRefDataLoading] = useState(true);
+
+  // Fetch reference data on mount
+  useEffect(() => {
+    const loadReferenceData = async () => {
+      setRefDataLoading(true);
+      const data = await fetchReferenceData();
+      setReferenceDataState(data);
+      setRefDataLoading(false);
+    };
+    loadReferenceData();
+  }, []);
 
   useEffect(() => {
     handleScoreCase(formData);
@@ -126,30 +139,70 @@ export default function SingleCaseScrutiny({ referenceData }) {
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-slate-400 text-[10px] mb-0.5">State</label>
-                <input
-                  type="number"
-                  value={formData.state_code}
-                  onChange={(e) => handleInputChange('state_code', parseInt(e.target.value) || 1)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                />
+                <select
+                  value={formData.state_code || ''}
+                  onChange={(e) => {
+                    const newStateCode = parseInt(e.target.value);
+                    setActivePreset(null);
+                    setFormData({
+                      ...formData,
+                      state_code: newStateCode,
+                      dist_code: 1, // Reset district when state changes
+                    });
+                  }}
+                  disabled={refDataLoading}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 text-xs disabled:opacity-50"
+                >
+                  {refDataLoading ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    (referenceDataState?.states || []).map((state) => (
+                      <option key={state.code} value={state.code}>
+                        {state.name}
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-slate-400 text-[10px] mb-0.5">District</label>
-                <input
-                  type="number"
-                  value={formData.dist_code}
-                  onChange={(e) => handleInputChange('dist_code', parseInt(e.target.value) || 1)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                />
+                <select
+                  value={formData.dist_code || ''}
+                  onChange={(e) => handleInputChange('dist_code', parseInt(e.target.value))}
+                  disabled={refDataLoading || !formData.state_code}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 text-xs disabled:opacity-50"
+                >
+                  {refDataLoading ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    (referenceDataState?.districts || [])
+                      .filter((d) => d.state_code === formData.state_code)
+                      .map((district) => (
+                        <option key={`${district.state_code}-${district.dist_code}`} value={district.dist_code}>
+                          {district.name}
+                        </option>
+                      ))
+                  )}
+                </select>
               </div>
               <div className="col-span-4 sm:col-span-2">
                 <label className="block text-slate-400 text-[10px] mb-0.5">Court No</label>
-                <input
-                  type="number"
-                  value={formData.court_no}
-                  onChange={(e) => handleInputChange('court_no', parseInt(e.target.value) || 1)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                />
+                <select
+                  value={formData.court_no || ''}
+                  onChange={(e) => handleInputChange('court_no', parseInt(e.target.value))}
+                  disabled={refDataLoading}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-amber-500 text-xs disabled:opacity-50"
+                >
+                  {refDataLoading ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    (referenceDataState?.courts || []).map((court) => (
+                      <option key={court.court_no} value={court.court_no}>
+                        {court.name}
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
             </div>
 

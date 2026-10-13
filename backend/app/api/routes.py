@@ -125,26 +125,271 @@ async def upload_cause_list(file: UploadFile = File(...)):
 @router.get("/reference_data", response_model=ReferenceDataResponse, tags=["Metadata"])
 def get_reference_data():
     """Retrieve dropdown reference options, jurisdiction codes, and sample presets."""
+    # All Indian States and Union Territories (as per e-Courts/NJDG codes)
     states = [
         {"code": 1, "name": "Maharashtra"},
         {"code": 2, "name": "Andhra Pradesh"},
         {"code": 3, "name": "Karnataka"},
+        {"code": 4, "name": "Kerala"},
+        {"code": 5, "name": "Tamil Nadu"},
+        {"code": 6, "name": "Odisha"},
+        {"code": 7, "name": "Punjab"},
         {"code": 8, "name": "Bihar"},
-        {"code": 17, "name": "Gujarat"},
+        {"code": 9, "name": "Rajasthan"},
+        {"code": 10, "name": "Uttar Pradesh"},
+        {"code": 11, "name": "Madhya Pradesh"},
+        {"code": 12, "name": "West Bengal"},
+        {"code": 13, "name": "Assam"},
+        {"code": 14, "name": "Gujarat"},
+        {"code": 15, "name": "Haryana"},
+        {"code": 16, "name": "Himachal Pradesh"},
+        {"code": 17, "name": "Jammu & Kashmir"},
         {"code": 18, "name": "Chhattisgarh"},
-        {"code": 27, "name": "Chandigarh"},
+        {"code": 19, "name": "Jharkhand"},
+        {"code": 20, "name": "Uttarakhand"},
+        {"code": 21, "name": "Arunachal Pradesh"},
+        {"code": 22, "name": "Manipur"},
+        {"code": 23, "name": "Meghalaya"},
+        {"code": 24, "name": "Mizoram"},
+        {"code": 25, "name": "Nagaland"},
+        {"code": 26, "name": "Sikkim"},
+        {"code": 27, "name": "Tripura"},
+        {"code": 28, "name": "Goa"},
         {"code": 29, "name": "Telangana"},
+        # Union Territories
+        {"code": 30, "name": "Delhi"},
+        {"code": 31, "name": "Puducherry"},
+        {"code": 32, "name": "Chandigarh"},
+        {"code": 33, "name": "Andaman & Nicobar Islands"},
+        {"code": 34, "name": "Dadra & Nagar Haveli"},
+        {"code": 35, "name": "Daman & Diu"},
+        {"code": 36, "name": "Lakshadweep"},
     ]
-    
+
+    # Districts for each state (representative sample for each state)
     districts = [
-        {"state_code": 1, "dist_code": 1, "name": "Nandurbar"},
-        {"state_code": 1, "dist_code": 2, "name": "Dhule"},
-        {"state_code": 1, "dist_code": 3, "name": "Jalgaon"},
+        # Maharashtra (code: 1)
+        {"state_code": 1, "dist_code": 1, "name": "Mumbai City"},
+        {"state_code": 1, "dist_code": 2, "name": "Mumbai Suburban"},
+        {"state_code": 1, "dist_code": 3, "name": "Pune"},
+        {"state_code": 1, "dist_code": 4, "name": "Nagpur"},
+        {"state_code": 1, "dist_code": 5, "name": "Thane"},
+        {"state_code": 1, "dist_code": 6, "name": "Nashik"},
+        {"state_code": 1, "dist_code": 7, "name": "Aurangabad"},
+        {"state_code": 1, "dist_code": 8, "name": "Solapur"},
+        {"state_code": 1, "dist_code": 9, "name": "Kolhapur"},
+        {"state_code": 1, "dist_code": 10, "name": "Nandurbar"},
+        {"state_code": 1, "dist_code": 11, "name": "Dhule"},
+        {"state_code": 1, "dist_code": 12, "name": "Jalgaon"},
+
+        # Andhra Pradesh (code: 2)
+        {"state_code": 2, "dist_code": 1, "name": "Visakhapatnam"},
+        {"state_code": 2, "dist_code": 2, "name": "Vijayawada"},
+        {"state_code": 2, "dist_code": 3, "name": "Guntur"},
+        {"state_code": 2, "dist_code": 4, "name": "Nellore"},
+        {"state_code": 2, "dist_code": 5, "name": "Kurnool"},
+        {"state_code": 2, "dist_code": 6, "name": "Tirupati"},
         {"state_code": 2, "dist_code": 7, "name": "Kadapa"},
-        {"state_code": 2, "dist_code": 15, "name": "Nellore"},
-        {"state_code": 8, "dist_code": 4, "name": "Saran at Chapra"},
-        {"state_code": 8, "dist_code": 10, "name": "Motihari"},
+        {"state_code": 2, "dist_code": 8, "name": "Rajahmundry"},
+
+        # Karnataka (code: 3)
+        {"state_code": 3, "dist_code": 1, "name": "Bangalore Urban"},
+        {"state_code": 3, "dist_code": 2, "name": "Bangalore Rural"},
+        {"state_code": 3, "dist_code": 3, "name": "Mysore"},
+        {"state_code": 3, "dist_code": 4, "name": "Mangalore"},
+        {"state_code": 3, "dist_code": 5, "name": "Hubli-Dharwad"},
+        {"state_code": 3, "dist_code": 6, "name": "Belgaum"},
+        {"state_code": 3, "dist_code": 7, "name": "Gulbarga"},
+        {"state_code": 3, "dist_code": 8, "name": "Shimoga"},
+
+        # Kerala (code: 4)
+        {"state_code": 4, "dist_code": 1, "name": "Thiruvananthapuram"},
+        {"state_code": 4, "dist_code": 2, "name": "Kochi"},
+        {"state_code": 4, "dist_code": 3, "name": "Kozhikode"},
+        {"state_code": 4, "dist_code": 4, "name": "Thrissur"},
+        {"state_code": 4, "dist_code": 5, "name": "Kollam"},
+        {"state_code": 4, "dist_code": 6, "name": "Alappuzha"},
+
+        # Tamil Nadu (code: 5)
+        {"state_code": 5, "dist_code": 1, "name": "Chennai"},
+        {"state_code": 5, "dist_code": 2, "name": "Coimbatore"},
+        {"state_code": 5, "dist_code": 3, "name": "Madurai"},
+        {"state_code": 5, "dist_code": 4, "name": "Tiruchirappalli"},
+        {"state_code": 5, "dist_code": 5, "name": "Salem"},
+        {"state_code": 5, "dist_code": 6, "name": "Tirunelveli"},
+
+        # Odisha (code: 6)
+        {"state_code": 6, "dist_code": 1, "name": "Bhubaneswar"},
+        {"state_code": 6, "dist_code": 2, "name": "Cuttack"},
+        {"state_code": 6, "dist_code": 3, "name": "Rourkela"},
+        {"state_code": 6, "dist_code": 4, "name": "Berhampur"},
+        {"state_code": 6, "dist_code": 5, "name": "Sambalpur"},
+
+        # Punjab (code: 7)
+        {"state_code": 7, "dist_code": 1, "name": "Ludhiana"},
+        {"state_code": 7, "dist_code": 2, "name": "Amritsar"},
+        {"state_code": 7, "dist_code": 3, "name": "Jalandhar"},
+        {"state_code": 7, "dist_code": 4, "name": "Patiala"},
+        {"state_code": 7, "dist_code": 5, "name": "Bathinda"},
+
+        # Bihar (code: 8)
+        {"state_code": 8, "dist_code": 1, "name": "Patna"},
+        {"state_code": 8, "dist_code": 2, "name": "Gaya"},
+        {"state_code": 8, "dist_code": 3, "name": "Bhagalpur"},
+        {"state_code": 8, "dist_code": 4, "name": "Muzaffarpur"},
+        {"state_code": 8, "dist_code": 5, "name": "Purnia"},
+        {"state_code": 8, "dist_code": 6, "name": "Darbhanga"},
+        {"state_code": 8, "dist_code": 7, "name": "Saran (Chapra)"},
+        {"state_code": 8, "dist_code": 8, "name": "Motihari"},
+
+        # Rajasthan (code: 9)
+        {"state_code": 9, "dist_code": 1, "name": "Jaipur"},
+        {"state_code": 9, "dist_code": 2, "name": "Jodhpur"},
+        {"state_code": 9, "dist_code": 3, "name": "Udaipur"},
+        {"state_code": 9, "dist_code": 4, "name": "Kota"},
+        {"state_code": 9, "dist_code": 5, "name": "Bikaner"},
+        {"state_code": 9, "dist_code": 6, "name": "Ajmer"},
+
+        # Uttar Pradesh (code: 10)
+        {"state_code": 10, "dist_code": 1, "name": "Lucknow"},
+        {"state_code": 10, "dist_code": 2, "name": "Kanpur"},
+        {"state_code": 10, "dist_code": 3, "name": "Agra"},
+        {"state_code": 10, "dist_code": 4, "name": "Varanasi"},
+        {"state_code": 10, "dist_code": 5, "name": "Allahabad (Prayagraj)"},
+        {"state_code": 10, "dist_code": 6, "name": "Meerut"},
+        {"state_code": 10, "dist_code": 7, "name": "Noida (Gautam Budh Nagar)"},
+        {"state_code": 10, "dist_code": 8, "name": "Ghaziabad"},
+
+        # Madhya Pradesh (code: 11)
+        {"state_code": 11, "dist_code": 1, "name": "Bhopal"},
+        {"state_code": 11, "dist_code": 2, "name": "Indore"},
+        {"state_code": 11, "dist_code": 3, "name": "Jabalpur"},
+        {"state_code": 11, "dist_code": 4, "name": "Gwalior"},
+        {"state_code": 11, "dist_code": 5, "name": "Ujjain"},
+
+        # West Bengal (code: 12)
+        {"state_code": 12, "dist_code": 1, "name": "Kolkata"},
+        {"state_code": 12, "dist_code": 2, "name": "Howrah"},
+        {"state_code": 12, "dist_code": 3, "name": "Darjeeling"},
+        {"state_code": 12, "dist_code": 4, "name": "Siliguri"},
+        {"state_code": 12, "dist_code": 5, "name": "Durgapur"},
+        {"state_code": 12, "dist_code": 6, "name": "Asansol"},
+
+        # Assam (code: 13)
+        {"state_code": 13, "dist_code": 1, "name": "Guwahati"},
+        {"state_code": 13, "dist_code": 2, "name": "Silchar"},
+        {"state_code": 13, "dist_code": 3, "name": "Dibrugarh"},
+        {"state_code": 13, "dist_code": 4, "name": "Jorhat"},
+
+        # Gujarat (code: 14)
+        {"state_code": 14, "dist_code": 1, "name": "Ahmedabad"},
+        {"state_code": 14, "dist_code": 2, "name": "Surat"},
+        {"state_code": 14, "dist_code": 3, "name": "Vadodara"},
+        {"state_code": 14, "dist_code": 4, "name": "Rajkot"},
+        {"state_code": 14, "dist_code": 5, "name": "Gandhinagar"},
+
+        # Haryana (code: 15)
+        {"state_code": 15, "dist_code": 1, "name": "Gurugram"},
+        {"state_code": 15, "dist_code": 2, "name": "Faridabad"},
+        {"state_code": 15, "dist_code": 3, "name": "Rohtak"},
+        {"state_code": 15, "dist_code": 4, "name": "Karnal"},
+        {"state_code": 15, "dist_code": 5, "name": "Hisar"},
+
+        # Himachal Pradesh (code: 16)
+        {"state_code": 16, "dist_code": 1, "name": "Shimla"},
+        {"state_code": 16, "dist_code": 2, "name": "Kangra"},
+        {"state_code": 16, "dist_code": 3, "name": "Kullu"},
+        {"state_code": 16, "dist_code": 4, "name": "Manali"},
+
+        # Jammu & Kashmir (code: 17)
+        {"state_code": 17, "dist_code": 1, "name": "Srinagar"},
+        {"state_code": 17, "dist_code": 2, "name": "Jammu"},
+        {"state_code": 17, "dist_code": 3, "name": "Anantnag"},
+        {"state_code": 17, "dist_code": 4, "name": "Baramulla"},
+
+        # Chhattisgarh (code: 18)
+        {"state_code": 18, "dist_code": 1, "name": "Raipur"},
+        {"state_code": 18, "dist_code": 2, "name": "Bilaspur"},
+        {"state_code": 18, "dist_code": 3, "name": "Durg"},
+        {"state_code": 18, "dist_code": 4, "name": "Bastar"},
+
+        # Jharkhand (code: 19)
+        {"state_code": 19, "dist_code": 1, "name": "Ranchi"},
+        {"state_code": 19, "dist_code": 2, "name": "Jamshedpur"},
+        {"state_code": 19, "dist_code": 3, "name": "Dhanbad"},
+        {"state_code": 19, "dist_code": 4, "name": "Bokaro"},
+
+        # Uttarakhand (code: 20)
+        {"state_code": 20, "dist_code": 1, "name": "Dehradun"},
+        {"state_code": 20, "dist_code": 2, "name": "Haridwar"},
+        {"state_code": 20, "dist_code": 3, "name": "Nainital"},
+        {"state_code": 20, "dist_code": 4, "name": "Roorkee"},
+
+        # Arunachal Pradesh (code: 21)
+        {"state_code": 21, "dist_code": 1, "name": "Itanagar"},
+        {"state_code": 21, "dist_code": 2, "name": "Tawang"},
+        {"state_code": 21, "dist_code": 3, "name": "Pasighat"},
+
+        # Manipur (code: 22)
+        {"state_code": 22, "dist_code": 1, "name": "Imphal"},
+        {"state_code": 22, "dist_code": 2, "name": "Thoubal"},
+
+        # Meghalaya (code: 23)
+        {"state_code": 23, "dist_code": 1, "name": "Shillong"},
+        {"state_code": 23, "dist_code": 2, "name": "Tura"},
+
+        # Mizoram (code: 24)
+        {"state_code": 24, "dist_code": 1, "name": "Aizawl"},
+
+        # Nagaland (code: 25)
+        {"state_code": 25, "dist_code": 1, "name": "Kohima"},
+        {"state_code": 25, "dist_code": 2, "name": "Dimapur"},
+
+        # Sikkim (code: 26)
+        {"state_code": 26, "dist_code": 1, "name": "Gangtok"},
+
+        # Tripura (code: 27)
+        {"state_code": 27, "dist_code": 1, "name": "Agartala"},
+
+        # Goa (code: 28)
+        {"state_code": 28, "dist_code": 1, "name": "Panaji"},
+        {"state_code": 28, "dist_code": 2, "name": "Margao"},
+        {"state_code": 28, "dist_code": 3, "name": "Vasco da Gama"},
+
+        # Telangana (code: 29)
         {"state_code": 29, "dist_code": 1, "name": "Hyderabad"},
+        {"state_code": 29, "dist_code": 2, "name": "Secunderabad"},
+        {"state_code": 29, "dist_code": 3, "name": "Warangal"},
+        {"state_code": 29, "dist_code": 4, "name": "Nizamabad"},
+        {"state_code": 29, "dist_code": 5, "name": "Karimnagar"},
+
+        # Delhi (code: 30)
+        {"state_code": 30, "dist_code": 1, "name": "Central Delhi"},
+        {"state_code": 30, "dist_code": 2, "name": "South Delhi"},
+        {"state_code": 30, "dist_code": 3, "name": "North Delhi"},
+        {"state_code": 30, "dist_code": 4, "name": "East Delhi"},
+        {"state_code": 30, "dist_code": 5, "name": "West Delhi"},
+        {"state_code": 30, "dist_code": 6, "name": "New Delhi"},
+
+        # Puducherry (code: 31)
+        {"state_code": 31, "dist_code": 1, "name": "Puducherry"},
+        {"state_code": 31, "dist_code": 2, "name": "Karaikal"},
+
+        # Chandigarh (code: 32)
+        {"state_code": 32, "dist_code": 1, "name": "Chandigarh"},
+
+        # Andaman & Nicobar Islands (code: 33)
+        {"state_code": 33, "dist_code": 1, "name": "Port Blair"},
+
+        # Dadra & Nagar Haveli (code: 34)
+        {"state_code": 34, "dist_code": 1, "name": "Silvassa"},
+
+        # Daman & Diu (code: 35)
+        {"state_code": 35, "dist_code": 1, "name": "Daman"},
+        {"state_code": 35, "dist_code": 2, "name": "Diu"},
+
+        # Lakshadweep (code: 36)
+        {"state_code": 36, "dist_code": 1, "name": "Kavaratti"},
     ]
     
     courts = [
